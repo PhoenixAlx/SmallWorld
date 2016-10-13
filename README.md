@@ -1,2 +1,2 @@
 # SmallWorld
-Mae and learn what is a smallworld
+Make and learn what is a smallworld

@@ -22,6 +22,662 @@
         <h1>Smallworld</h1>
         <h2>Make and learn what is a smallworld</h2>
         <a href="https://github.com/PhoenixAlx/SmallWorld" class="button"><small>View project on</small> GitHub</a>
+        
+        		<section id="Herramienta">
+			
+			He construido una herramienta para que veas como se crea una red de este tipo. Tendras que empezar añadiendo un número de nodos, mínimo 3. Al pulsar sobre generar se creará una red de este tipo siguiendo el algoritmo de Barabási–Albert ( he usado porque me parecía el más sencillo e intuitivo)
+			http://es.wikipedia.org/wiki/Modelo_Barab%C3%A1si%E2%80%93Albert
+			este algoritmo consiste en inicialemnte enlazar un pequeño grupos de los nodos que pones y a continuación ir añadiendo el resto de nodos uno a uno y enlazando al resto con una probabilidad que dependerá del número de enlaces que tenga al que se va a enlazar. A más enlaces más probable.
+			<br/>
+			Una vez que se genere puede añadir nuevos enlaces. Cuando tengas muchos y no veas con claridad puedes ordenarlos pulsando en el botón de ordenar. Este botón hará que se agrupen los nodos con pocos enlace cerca de los que tienen muchos.
+			<br/>
+			Más abajo puedes ver una gráfica donde se muestra ver el número de nodos (eje vertical) que tienen una cantidad de enlaces (eje horizontal). Puedes comprobar que la cantidad de enlaces que tienen la mayoría de nodos es muy pequeña y que los que tienen muchos enlaces son muy pocos. Al ser esto estadística cuanto más nodos pongas mejor lo verás. Esta distribución sigue una ley de potencias
+			
+			$$ numeroEnlaces^{-\gamma}$$
+			<br/>
+			Puedes ir ajustando el valor del exponente para situar la función teórica.
+			<br/>
+			 
+			
+		  <div id="principalSW"  >
+
+			<div id="controlTamZonaDibujoSW">
+				<label for="tamDibujoSW">Tamaño zona dibujo</label>
+				<button id="bMenosTamSW" onmousedown="bajaTamSW()" onmouseup="parat1SW()" >-</button>
+				<input type="tel" id="tamDibujoSW" name="tamDibujoSW" min="10" value="300" size="10">
+				</input>
+				<button id="bMasTamSW" onmousedown="subeTamSW()" onmouseup="parat1SW()" >+</button>
+			</div>
+			
+			<div id="botonesSW">
+				<button id="goSW" onclick="crearSW()">Generar</button>
+				<button id="limpiarSW" onclick="limpiarSW()">Limpiar</button>
+				<button id="ordenarSW" onclick="ordenarSW()" disabled>Ordenar</button>
+			</div>
+			<div id="zonaDibujoSW" >
+				<canvas id="graficosSW" width="300" height="300" style="top:50px;border:1px solid #000000;">Tienes un navegador que no va el HTML5
+					
+				</canvas>
+			</div>
+			<div id="botonesGraficasSW" >
+				<label for="graficos2SW" style="position:relative;top:10px">Gráfico que muestra el número de nodos que tienen cierta cantidad de enlaces</label>
+			</div>
+			<div id="controlExpFuncionSW" style="position:relative;top:20px" >
+				<label for="expFuncionSW">Exponente de la función</label>
+				<button id="bMenosExpFuncionSW" onmousedown="bajaExpFuncionSW()" onmouseup=" parat1HistoSW()" disabled>-</button>
+				<input type="tel" id="expFuncionSW" name="expFuncionSW" min="-10" value="-2.6" size="6" >
+				</input>
+				<button id="bMasExpFuncionSW" onmousedown="subeExpFuncionSW()" onmouseup=" parat1HistoSW()" disabled>+</button>
+			</div>
+			<div id="zonaGraficasSW">
+				<canvas id="graficos2SW" width="300" height="300" style="position:relative;top:30px;border:1px solid #000000;">Tienes un navegador que no va el HTML5</canvas>
+			</div>
+			
+		  </div>
+		</section>
+		
+	  
+      <script type="text/javascript">
+			var t1SW=null;
+			var rojoSW="red";
+			var blancoSW="white";
+			var negroSW="black";
+			var amarilloSW="yellow";
+			var azulSW="blue";
+			var graficosSW=document.getElementById("graficosSW");
+			var graficos2SW=document.getElementById("graficos2SW");
+			var bOrdenarSW=document.getElementById("ordenarSW");
+			var bMenosExpFuncionSW=document.getElementById("bMenosExpFuncionSW");
+			var bMasExpFuncionSW=document.getElementById("bMasExpFuncionSW");
+			var xLimGSW=graficosSW.width;
+			var yLimGSW=graficosSW.height;
+			var xLimG2SW=graficos2SW.width;
+			var yLimG2SW=graficos2SW.height;
+			var contextoSW=graficosSW.getContext("2d");
+			var contexto2SW=graficos2SW.getContext("2d");
+			var sNodosSW="";
+			var aNodosSW=new Array();//posicion de los nodos
+			var aEnlacesSW=new Array();// a quien esta enlazado cada nodo
+			var aEnlacesNodoSW=new Array();//numero de enlaces de cada nodo
+			var numNodosSW=0;
+			var numEnlacesSW=0;
+			var radioNodosSW=5;
+			var generadoSW=false;
+			graficosSW.addEventListener('click', addNodoSW, false);
+			//graficos.addEventListener('mousemove', vectorPrevio, false);
+			limpiarSW();
+			//contexto.fillStyle = blanco;
+			//contexto.fill();
+			
+
+			function ordenarSW(){
+				//ordenamos nodos
+				aNodosSW=ordenarDibujoNodos();
+				pintarSoloNodosSW();
+				dibujarRedSW(0);
+				return;
+			}
+			function ordenarDibujoNodos(){
+				//la idea es cambiar la posicion de nodos para que los nodos que tienen pocos enlaces estén más cerca del nodo con más enlaces que esten enlazados
+				//creo vector nuevas posiciones
+				var aNuevasPosicionesNodos=new Array(numNodosSW);
+				for (var i=0;i<aNuevasPosicionesNodos.length;i++){
+					aNuevasPosicionesNodos[i]="";
+				}
+				//queremos obtener el numero maximo de enlaces que tiene un nodo
+				var histograma=obtenerHistogramaSW();
+				var numEnlacesMax=histograma.length;
+				//vamos buscando nodos que tengan una cantidad de enlaces desde el maximo a 1
+				for (var numEnlaces=numEnlacesMax;numEnlaces>0;numEnlaces=numEnlaces-1){
+					for (var nodo=0;nodo<numNodosSW;nodo++){
+						if (numEnlaces==aEnlacesNodoSW[nodo] ){
+							//cogemos el nodo que tiene la cantidad de enlaces que buscamos y si que no tiene nueva posicion asignada.
+							
+							var x=0;
+							var y=0;
+							if (aNuevasPosicionesNodos[nodo]==""){
+								//le asignamos nueva posicion
+								var dentro=false;
+								while (!dentro){
+									x=parseInt(xLimGSW*Math.random());
+									y=parseInt(yLimGSW*Math.random());
+									if ((x>2*radioNodosSW && x<xLimGSW-2*radioNodosSW ) && (y>2*radioNodosSW && y<yLimGSW-2*radioNodosSW )){
+												dentro=true;
+									}
+								}
+							}else{
+								//si ya tienen cogemos esa
+								var aPosicion=aNuevasPosicionesNodos[nodo].split(',');
+								x=parseInt(aPosicion[0]);
+								y=parseInt(aPosicion[1]);
+							}
+							aNuevasPosicionesNodos[nodo]=x+","+y;
+							//buscamos de que esquina esta mas lejos
+							var rMax=0;
+							var rE1=Math.sqrt(Math.pow((x-0),2)+Math.pow((y-0),2));
+							var rE2=Math.sqrt(Math.pow((x-xLimGSW),2)+Math.pow((y-0),2));
+							var rE3=Math.sqrt(Math.pow((x-0),2)+Math.pow((y-yLimGSW),2));
+							var rE4=Math.sqrt(Math.pow((x-xLimGSW),2)+Math.pow((y-yLimGSW),2));
+							var arE=[rE1,rE2,rE3,rE4];
+							for ( var i=0;i<arE.length;i++){
+								if ( rMax<arE[i]){
+									rMax=arE[i];
+								}
+							}
+							//repasamos los nodos a los que esta conectado y los colocamos a las distancias deseadas aEnlacesSW
+							var valor="";
+							var valor2="";
+							var r=0;
+							var angulo=0;
+							var x2=0;
+							var y2=0;
+							for (var nodo2=0;nodo2<numNodosSW;nodo2++){
+								if (aNuevasPosicionesNodos[nodo2]==""){
+									//solo los que no tengan nueva posicion asignada
+									valor=nodo+","+nodo2;
+									valor2=nodo2+","+nodo;
+									if (aEnlacesSW.indexOf(valor)!=-1 || aEnlacesSW.indexOf(valor2)!=-1 ){
+										//si estan enlazados le asignamos nueva posicion dentro de los limites
+										var dentro=false;
+										while (!dentro){
+											r=3*radioNodosSW+aEnlacesNodoSW[nodo2]*rMax/(numEnlacesMax*0.5*(radioNodosSW));
+											angulo=2*Math.PI*Math.random();
+
+											x2=x+parseInt(r*Math.cos(angulo));
+											y2=y+parseInt(r*Math.sin(angulo));
+											/*if (x2<radioNodosSW){
+												x2=radioNodosSW;
+											}
+											if (y2<radioNodosSW){
+												y2=radioNodosSW;
+											}
+											if (x2>xLimGSW-radioNodosSW){
+												x2=xLimGSW-radioNodosSW;
+											}
+											if (y2>yLimGSW-radioNodosSW){
+												y2=yLimGSW-radioNodosSW;
+											}*/
+											if ((x2>2*radioNodosSW && x2<xLimGSW-2*radioNodosSW ) && (y2>2*radioNodosSW && y2<yLimGSW-2*radioNodosSW )){
+												dentro=true;
+											}
+										}
+										aNuevasPosicionesNodos[nodo2]=x2+","+y2;
+										
+									}
+									
+								}
+								
+							}
+						}
+					}
+				}
+				
+				return aNuevasPosicionesNodos;
+			}
+			function obtenerHistogramaSW(){
+				//nummero de enlaces es numEnlaces
+				//recorrer cada nodo para ver cuantos enlaces tiene
+				
+				//ver el numero maximo de enlaces que tiene un nodo
+				var numEnlacesMax=0;
+
+				for (var i=0;i<aEnlacesNodoSW.length;i++){
+					if (numEnlacesMax<aEnlacesNodoSW[i]){
+						numEnlacesMax=aEnlacesNodoSW[i];
+					}
+				}
+
+				var histograma=new Array(numEnlacesMax+1);
+				for (var i=0;i<histograma.length;i++){
+					histograma[i]=0;
+				}
+				//poner histograma a 0
+				var valor=0;
+				for (var nodo=0;nodo<aNodosSW.length;nodo++){
+					valor=aEnlacesNodoSW[nodo];
+					histograma[valor]++;
+				}
+
+				return histograma;
+			}
+			function dibujarHistogramaSW(histograma){
+				//limpiar
+				
+				dibujar_cuadroSW(contexto2SW,0,0,xLimG2SW,yLimG2SW,blancoSW);
+				//dibujar ejes
+				//eje x
+				//posicion inicial
+				var xInicio=parseInt(xLimG2SW*0.05);
+				var yInicio=parseInt(yLimG2SW*0.95);
+				//posicion final
+				var xFin=parseInt(xLimG2SW*0.95);
+				var yFin=parseInt(yLimG2SW*0.05);
+				contexto2SW.strokeStyle = negroSW;
+				contexto2SW.beginPath();
+				contexto2SW.moveTo(xInicio,yInicio);
+				contexto2SW.lineTo(xFin,yInicio);
+				//contexto2.stroke();
+				contexto2SW.moveTo(xInicio,yInicio);
+				contexto2SW.lineTo(xInicio,yFin);
+				contexto2SW.stroke();
+				//dibujar una barra del histograma
+				//obtener coordenadas de inicio de la barra
+				var xInicioBar=xInicio;
+				var yInicioBar=yInicio;
+				var xTamBarra=0;
+				var yTamBarra=0;
+				xTamBarra=(xFin-xInicio)/numEnlacesSW;
+				var numEnlacesMax=0;
+				for (var i=0;i<histograma.length;i++){
+					if (numEnlacesMax<histograma[i]){
+						numEnlacesMax=histograma[i];
+					}
+				}
+				yTamBarra=(Math.abs(yFin-yInicio))/numEnlacesMax;
+				xTamBarra=(xFin-xInicio)/histograma.length;
+				//dibujar barras
+				var color=azulSW;
+
+				for (var i=0;i<histograma.length;i++){
+					dibujar_cuadroSW(contexto2SW,xInicioBar,yInicioBar-yTamBarra*histograma[i],xTamBarra,yTamBarra*histograma[i],color);
+					xInicioBar=xInicioBar+xTamBarra;
+
+
+				}
+				//dibujar exponencial
+				//obtener exponencial
+				var xExp=xInicio;
+				var yExp=yInicio;
+				var campo=document.getElementById("expFuncionSW");
+				var exponente=parseFloat(campo.value);
+				//contexto2.moveTo(xExp,yExp);
+				//obtenemos el numero de nodos correspondientes a 1 enlace
+				yExp=yInicio-yTamBarra*(parseInt(Math.pow(1,exponente)*numEnlacesSW));
+				xExp=xInicio+xTamBarra;
+				contexto2SW.save();
+				contexto2SW.strokeStyle = rojoSW;
+				contexto2SW.lineWidth=3; 
+				
+				contexto2SW.beginPath();
+				contexto2SW.moveTo(xExp,yExp);
+				for (var i=1.1;i<histograma.length;i=i+0.1){
+					yExp=yInicio-yTamBarra*(Math.pow(i,exponente)*numEnlacesSW);
+					xExp=xInicio+xTamBarra*i;
+					contexto2SW.lineTo(xExp,yExp);
+					
+					
+				}
+				contexto2SW.stroke();
+				contexto2SW.restore();
+				//para el segundo
+				
+				//alert(histograma);
+				//alert( aExponencial);
+				return;
+			}
+			function dibujar_cuadroSW(ctx,x1,y1,x2,y2,color){
+				ctx.fillStyle = color;
+				ctx.fillRect(x1, y1, x2,y2);
+				/*contexto.lineWidth = 1;
+				contexto.strokeStyle = negro;
+				contexto.strokeRect(x1, y1, x2, y2);*/
+				return;
+			} 
+			function addNodoSW(e){
+				//cxt.strokeStyle = colorB;
+				//cxt.fillStyle =colorR;
+				var x=0;
+				var y =0;
+				var rect = graficosSW.getBoundingClientRect();
+				x= e.clientX - rect.left,
+      				y= e.clientY - rect.top
+				xClick = x - this.offsetLeft;
+				 // yClick = y - this.offsetTop;
+				yClick = y ;
+				var botonRaton=e.which;
+				//implementar en el futuro saber si estas dentro de un nodo y borrarlo si es asi
+				contextoSW.fillStyle=rojoSW;
+				contextoSW.beginPath();
+				contextoSW.arc(xClick,yClick,radioNodosSW,0,Math.PI*2,false);
+				contextoSW.closePath();
+				contextoSW.fill();
+				aNodosSW[numNodosSW]=xClick+","+yClick;
+				aEnlacesNodoSW[numNodosSW]=0;
+				numNodosSW++;
+				if (generadoSW){
+					//crear red
+					var enlacesAntes=numEnlacesSW;
+					smallWorldSW(numNodosSW-1);
+					//dibujar histograma
+					dibujarHistogramaSW(obtenerHistogramaSW());
+					//dibujar enlaces
+					dibujarRedSW(enlacesAntes);
+					//dibujar nodos
+					pintarNodosSW();
+				}
+				return ;
+			}
+			function crearSW(){
+				if (numNodosSW>2){
+					var nodos=0;
+					//pintamos solo nodos
+					limpiarEnlacesSW();
+					pintarSoloNodosSW();
+					//crear primeros enlaces
+					nodos=primerosEnlacesSW();
+					//crear red
+					smallWorldSW(nodos);
+					//dibujar histograma
+					
+					dibujarHistogramaSW(obtenerHistogramaSW());
+					
+					//dibujar enlaces
+					dibujarRedSW(0);
+					//dibujar nodos
+					pintarNodosSW();
+					//activamos boton de ordenar
+					bOrdenarSW.disabled=false;
+					bMenosExpFuncionSW.disabled=false;
+					bMasExpFuncionSW.disabled=false;
+					generadoSW=true;
+				}else{
+					alert("Compae !!! no me seas rata y dibuja más de dos nodos");
+				}
+				return;
+			}
+			function primerosEnlacesSW(){
+				//coger un conjunto de nodos y enlazarnos de forma aleatoria
+				var numNodosCoger=Math.min(10,parseInt(numNodosSW/2));
+				//mezclamos aNodos
+				//aNodosSW=shuffleSW(aNodosSW);
+				//dividimos en dos grupos
+				//var primerosNodosEnlazar=aNodos.slice(0,numNodosCoger);
+				//var restoNodos=aNodos.slice(numNodosCoger,numNodos);
+				//enlazamos El primer vector de forma aleatoria
+				var otroNodo=0;
+				for (var nodo=1;nodo<numNodosCoger;nodo++){
+					//este nodo se enlazara con otro, asi que escogemos otro nodo que no sea el
+					otroNodo=nodo;
+					while (otroNodo==nodo){
+						otroNodo=parseInt((nodo)*Math.random());
+					}
+					//enlazamos los dos nodos
+					enlazarDosNodosSW(nodo,otroNodo);
+				}
+				//alert("numNodosCoger "+numNodosCoger);
+				//alert ("aNodos "+aNodos);
+				//alert("primerosNodosEnlazar "+primerosNodosEnlazar);
+				//alert("restoNodos "+restoNodos);
+				//alert ("aEnlaces "+aEnlaces);
+				//el resto de nodos es lo que se va conectar en smallwords
+				return numNodosCoger;
+			}
+			function enlazarDosNodosSW(nodo1,nodo2){
+				//primero debemos comprobar que no estan ya enlazados
+				//el vector aEnlaces tiene elementos "nodo1,nodo2" 
+				var valor=nodo1+","+nodo2;
+				var valor2=nodo2+","+nodo1;
+
+				if (aEnlacesSW.indexOf(valor)==-1 && aEnlacesSW.indexOf(valor2)==-1 ){
+					//no estan enlazado, por tanto  los incluimos en aEnlaces
+					aEnlacesSW[numEnlacesSW]=valor;
+					numEnlacesSW++;
+					if (aEnlacesNodoSW[nodo1]>=0 ){
+						aEnlacesNodoSW[nodo1]++;
+					}else{
+						aEnlacesNodoSW[nodo1]=1;
+					}
+					if (aEnlacesNodoSW[nodo2]>=0 ){
+						aEnlacesNodoSW[nodo2]++;
+					}else{
+						aEnlacesNodoSW[nodo2]=1;
+					}
+
+				}
+				
+				return ;
+			}
+			function smallWorldSW(nodos){
+				var nodo=0;
+				var nodoEnlace=0;
+				var enlazado=false;
+				for (var n=nodos;n<numNodosSW;n++){
+					//escogemos nodo
+					nodo=n;
+					enlazado=false
+					while (!enlazado){
+						//escogemos nodos a enlazar
+						//creamos lista de nodos
+						var listaNodos=new Array(n);
+						for (var i=0;i<listaNodos.length;i++){
+							listaNodos[i]=i;
+						}
+						//los desordenamos
+						listaNodos=shuffleSW(listaNodos);
+						for (var n2=0;n2<listaNodos.length && !enlazado ;n2++){
+							
+							nodoEnlace=listaNodos[n2];
+							/*while (nodo==nodoEnlace){
+								nodoEnlace=parseInt((numNodos)*Math.random());
+							}*/
+							//calculamos el numero de enlaces totales
+							totalEnlacesSW=numEnlacesSW;
+							//calculamos cantidad enlaces del al que se va a enlazar
+							numEnlaceNodoEnlaceSW=aEnlacesNodoSW[nodoEnlace];
+							//calculamos probabilidad de enlazarse
+							p=numEnlaceNodoEnlaceSW/totalEnlacesSW;
+							//prueban a ver si se enlazan;
+							var pRandom=Math.random();
+							
+							if (pRandom<p){
+								//se enlazan
+								enlazarDosNodosSW(nodo,nodoEnlace);
+								enlazado=true;
+							}
+						}
+					}
+					
+				}
+				
+				return;
+			}
+			function calcularNumEnlacesSW(nodo){
+				var numEnlacesNodo=0;
+				var aEn=new Array();
+				var enlace="";
+				var sNodo=nodo+",";
+				for (var i=0;i<numEnlacesSW;i++){
+					enlace=aEnlacesSW[i];
+					if (enlace.indexOf(sNodo)!=-1){
+						//si esta aumentamos num enlaces del nodo
+						numEnlacesNodo++;
+					};
+					
+				}
+				return numEnlacesNodo;
+			}
+			function dibujarRedSW(numEnlacesPintar){
+				var xi=0;
+				var yi=0;
+				var xf=0;
+				var yf=0;
+				var coorI=new Array;
+				var coorF=new Array;
+				var enlaces=new Array();
+				var enlaceN=0;
+				for (var i=numEnlacesPintar;i<numEnlacesSW;i++){
+					enlaces=aEnlacesSW[i].split(",");
+					//ir por todos sus enlaces
+					coorI=aNodosSW[parseInt(enlaces[0])].split(",");
+					coorF=aNodosSW[parseInt(enlaces[1])].split(",");
+					xi=parseInt(coorI[0]);
+					yi=parseInt(coorI[1]);
+					xf=parseInt(coorF[0]);
+					yf=parseInt(coorF[1]);
+					contextoSW.strokeStyle = negroSW;
+					contextoSW.lineWidth=0.5; 
+					contextoSW.moveTo(xi,yi);
+					contextoSW.lineTo(xf,yf);
+					contextoSW.stroke();
+				}
+				return;
+			}
+			function pintarSoloNodosSW(){
+				contextoSW.fillStyle = blancoSW;
+				contextoSW.fillRect(0, 0, xLimGSW,yLimGSW);
+				pintarNodosSW();
+				return;
+			}
+			function pintarNodosSW(){
+				var xi=0;
+				var yi=0;
+				var coorI=new Array;
+				for (var i=0;i<numNodosSW;i++){
+					coorI=aNodosSW[i].split(",");
+					xi=parseInt(coorI[0]);
+					yi=parseInt(coorI[1]);
+					contextoSW.fillStyle=rojoSW;
+					contextoSW.beginPath();
+					contextoSW.arc(xi,yi,radioNodosSW,0,Math.PI*2,false);
+					contextoSW.closePath();
+					contextoSW.fill();
+				}
+				return;
+			}
+			function limpiarSW(){
+				limpiarNodosSW();
+				limpiarEnlacesSW();
+				generadoSW=false;
+				contextoSW.fillStyle = blancoSW;
+				contextoSW.fillRect(0, 0, xLimGSW,yLimGSW);
+				bOrdenarSW.disabled=true;
+				bMenosExpFuncionSW.disabled=true;
+				bMasExpFuncionSW.disabled=true;
+				return;
+			}
+			function limpiarNodosSW(){
+				aNodosSW=new Array();
+				numNodosSW=0;
+				return;
+			}
+			function limpiarEnlacesSW(){
+				aEnlacesSW=new Array();
+				numEnlacesSW=0;
+				aEnlacesNodoSW=new Array();
+				return;
+			}
+			function disminuirTamSW(){
+				var campo=document.getElementById("tamDibujoSW");
+				var valor=parseInt(campo.value);
+				valor=valor-1;
+				if (valor<=100){
+				 valor=100;
+				}
+				campo.value=valor;
+				xLimGSW=valor;
+				graficosSW.width=xLimGSW;
+				yLimGSW=valor;
+				graficosSW.height=yLimGSW;
+
+				return;
+			}
+			function aumentarTamSW(){
+				var campo=document.getElementById("tamDibujoSW");
+				var valor=parseInt(campo.value);
+				valor=valor+1;
+				campo.value=valor;
+				xLimGSW=valor;
+				graficosSW.width=xLimGSW;
+				yLimGSW=valor;
+				graficosSW.height=yLimGSW;
+
+				return;
+			}
+			function bajaTamSW(){ 
+				var campo=document.getElementById("tamDibujoSW");
+				var regExp=comprobarNumeroSW(campo.value); 
+				if (regExp){
+					t1SW=setInterval("disminuirTamSW()",40);
+					
+				}else{
+					alert('mete un número entero so burro');
+				}
+			}
+			function subeTamSW(){ 
+				var campo=document.getElementById("tamDibujoSW");
+				var regExp=comprobarNumeroSW(campo.value); 
+				if (regExp){
+					t1SW=setInterval("aumentarTamSW()",40);
+					
+				}else{
+					alert('mete un número entero so burro');
+				}
+			}
+			
+			
+			function disminuirExpFuncionSW(){
+				var campo=document.getElementById("expFuncionSW");
+				var valor=parseFloat(campo.value);
+				valor=valor-0.01;
+				valor=Math.round (valor*100)/100;
+				campo.value=valor;
+				
+
+				return;
+			}
+			function aumentarExpFuncionSW(){
+				var campo=document.getElementById("expFuncionSW");
+				var valor=parseFloat(campo.value);
+				valor=valor+0.01;
+				valor=Math.round (valor*100)/100;
+				campo.value=valor;
+				return;
+			}
+			function bajaExpFuncionSW(){ 
+				var campo=document.getElementById("expFuncionSW");
+				var regExp=comprobarNumeroSW(campo.value); 
+				if (regExp){
+					t1SW=setInterval("disminuirExpFuncionSW()",40);
+					
+				}else{
+					alert('mete un número entero so burro');
+				}
+			}
+			function subeExpFuncionSW(){ 
+				var campo=document.getElementById("expFuncionSW");
+				var regExp=comprobarNumeroSW(campo.value); 
+				if (regExp){
+					t1SW=setInterval("aumentarExpFuncionSW()",40);
+					
+				}else{
+					alert('mete un número entero so burro');
+				}
+			}
+			function parat1HistoSW() {	 
+				//al soltar el ratón:
+				clearInterval(t1SW);//parar el temporizador.
+				dibujarHistogramaSW(obtenerHistogramaSW());
+			}
+			function parat1SW() {	 
+				//al soltar el ratón:
+				clearInterval(t1SW);//parar el temporizador.
+				limpiarSW();
+			}
+			function comprobarNumeroSW(valor){
+				var regExp=/[0-9]{1,10}$/.test(valor);
+				return regExp;
+			}
+			function shuffleSW(array){
+			  var j, temp;
+			  for(var i = array.length - 1; i > 0; i--){
+				j = Math.floor(Math.random() * (i + 1));
+				temp = array[i];
+				array[i] = array[j];
+				array[j] = temp;
+			  }
+			  return array;
+			}
+       </script>
       </div>
     </header>
 
